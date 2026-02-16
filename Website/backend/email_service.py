@@ -1,0 +1,391 @@
+"""
+Email Service for Sending Welcome Emails
+Supports SMTP, SendGrid, and Mailgun
+"""
+
+import os
+import smtplib
+import logging
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from typing import Optional, Dict
+from pathlib import Path
+
+# Initialize logger first
+logger = logging.getLogger(__name__)
+
+# Try to load environment variables from .env file FIRST
+try:
+    from dotenv import load_dotenv
+    # Load .env file from the same directory as this file
+    env_path = Path(__file__).parent / '.env'
+    # Use override=True to ensure new values replace old ones
+    load_dotenv(dotenv_path=env_path, override=True)
+    logger.info(f"Email service loaded .env from: {env_path}")
+except ImportError:
+    pass  # python-dotenv not installed, use system env vars
+except Exception as e:
+    logger.error(f"Error loading .env in email_service: {e}")
+
+def get_smtp_config():
+    """Get SMTP configuration dynamically from environment (always fresh)"""
+    # Reload .env to ensure we have latest values
+    try:
+        from dotenv import load_dotenv
+        env_path = Path(__file__).parent / '.env'
+        load_dotenv(dotenv_path=env_path, override=True)
+    except:
+        pass
+    
+    return {
+        "EMAIL_PROVIDER": os.getenv("EMAIL_PROVIDER", "smtp").lower(),
+        "SMTP_HOST": os.getenv("SMTP_HOST", "smtp.gmail.com"),
+        "SMTP_PORT": int(os.getenv("SMTP_PORT", "587")),
+        "SMTP_USER": os.getenv("SMTP_USER", ""),
+        "SMTP_PASSWORD": os.getenv("SMTP_PASSWORD", ""),
+        "SMTP_FROM_EMAIL": os.getenv("SMTP_FROM_EMAIL", os.getenv("SMTP_USER", "")),
+        "SMTP_FROM_NAME": os.getenv("SMTP_FROM_NAME", "NextHack Team"),
+    }
+
+# Email configuration from environment variables (for backward compatibility)
+# These are loaded at import time, but get_smtp_config() should be used for fresh values
+EMAIL_PROVIDER = get_smtp_config()["EMAIL_PROVIDER"]
+SMTP_HOST = get_smtp_config()["SMTP_HOST"]
+SMTP_PORT = get_smtp_config()["SMTP_PORT"]
+SMTP_USER = get_smtp_config()["SMTP_USER"]
+SMTP_PASSWORD = get_smtp_config()["SMTP_PASSWORD"]
+SMTP_FROM_EMAIL = get_smtp_config()["SMTP_FROM_EMAIL"]
+SMTP_FROM_NAME = get_smtp_config()["SMTP_FROM_NAME"]
+
+# SendGrid Configuration
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY", "")
+
+# Mailgun Configuration
+MAILGUN_API_KEY = os.getenv("MAILGUN_API_KEY", "")
+MAILGUN_DOMAIN = os.getenv("MAILGUN_DOMAIN", "")
+
+
+def get_welcome_email_template(email: str) -> Dict[str, str]:
+    """
+    Generate welcome email HTML and text content
+    """
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Welcome to NextHack!</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background-color: #0A0A0F; color: #FFFFFF;">
+        <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #0A0A0F;">
+            <tr>
+                <td align="center" style="padding: 40px 20px;">
+                    <table role="presentation" style="max-width: 600px; width: 100%; border-collapse: collapse; background: linear-gradient(135deg, #111118 0%, #1a1a24 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);">
+                        <!-- Header with gradient -->
+                        <tr>
+                            <td style="background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #EC4899 100%); padding: 40px 30px; text-align: center;">
+                                <h1 style="margin: 0; font-size: 32px; font-weight: 800; color: #FFFFFF; font-family: 'Space Grotesk', sans-serif;">
+                                    🚀 Welcome to NextHack!
+                                </h1>
+                            </td>
+                        </tr>
+                        
+                        <!-- Main Content -->
+                        <tr>
+                            <td style="padding: 40px 30px;">
+                                <p style="margin: 0 0 20px 0; font-size: 18px; line-height: 1.6; color: #FFFFFF;">
+                                    Hi there!
+                                </p>
+                                
+                                <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.8; color: #A1A1AA;">
+                                    Thank you for joining the NextHack community! We're thrilled to have you on board.
+                                </p>
+                                
+                                <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.8; color: #A1A1AA;">
+                                    You've taken the first step towards revolutionizing your cybersecurity approach. NextHack is being built with cutting-edge AI technology to provide you with:
+                                </p>
+                                
+                                <ul style="margin: 20px 0; padding-left: 20px; color: #A1A1AA; font-size: 16px; line-height: 1.8;">
+                                    <li style="margin-bottom: 10px;">🤖 <strong style="color: #FFFFFF;">AI-Powered Vulnerability Scanning</strong> - Detect threats with unprecedented accuracy</li>
+                                    <li style="margin-bottom: 10px;">⚡ <strong style="color: #FFFFFF;">Real-Time Threat Detection</strong> - Stay protected 24/7</li>
+                                    <li style="margin-bottom: 10px;">📊 <strong style="color: #FFFFFF;">Comprehensive Security Reports</strong> - Get actionable insights</li>
+                                    <li style="margin-bottom: 10px;">🛡️ <strong style="color: #FFFFFF;">Advanced Security Frameworks</strong> - OWASP, MITRE ATT&CK, NIST compliance</li>
+                                </ul>
+                                
+                                <p style="margin: 20px 0; font-size: 16px; line-height: 1.8; color: #A1A1AA;">
+                                    We're working hard to bring you the most advanced security platform. As an early subscriber, you'll be among the first to know when we launch and will receive exclusive updates about our progress.
+                                </p>
+                                
+                                <div style="margin: 30px 0; padding: 20px; background: rgba(99, 102, 241, 0.1); border-left: 4px solid #6366F1; border-radius: 8px;">
+                                    <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #818CF8; font-style: italic;">
+                                        "Security is not a product, but a process. We're here to make that process smarter, faster, and more effective."
+                                    </p>
+                                </div>
+                                
+                                <p style="margin: 20px 0 0 0; font-size: 16px; line-height: 1.8; color: #A1A1AA;">
+                                    Stay tuned for exciting updates! We can't wait to show you what we've been building.
+                                </p>
+                                
+                                <p style="margin: 30px 0 0 0; font-size: 16px; line-height: 1.8; color: #A1A1AA;">
+                                    Best regards,<br>
+                                    <strong style="color: #FFFFFF;">The NextHack Team</strong>
+                                </p>
+                            </td>
+                        </tr>
+                        
+                        <!-- Footer -->
+                        <tr>
+                            <td style="padding: 30px; background-color: #0A0A0F; text-align: center; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+                                <p style="margin: 0 0 15px 0; font-size: 14px; color: #71717A;">
+                                    You're receiving this email because you subscribed to NextHack launch notifications.
+                                </p>
+                                <p style="margin: 0; font-size: 12px; color: #71717A;">
+                                    &copy; 2025 NextHack. All rights reserved.
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+    """
+    
+    text_content = f"""
+    Welcome to NextHack!
+
+    Hi there!
+
+    Thank you for joining the NextHack Launch! We're thrilled to have you on board.
+
+    You've taken the first step towards revolutionizing your cybersecurity approach. NextHack is being built with cutting-edge AI technology to provide you with:
+
+    - AI-Powered Vulnerability Scanning - Detect threats with unprecedented accuracy
+    - Real-Time Threat Detection - Stay protected 24/7
+    - Comprehensive Security Reports - Get actionable insights
+    - Advanced Security Frameworks - OWASP, MITRE ATT&CK, NIST compliance
+
+    We're working hard to bring you the most advanced security platform. As an early subscriber, you'll be among the first to know when we launch and will receive exclusive updates about our progress.
+
+    "Security is not a product, but a process. We're here to make that process smarter, faster, and more effective."
+
+    Stay tuned for exciting updates! We can't wait to show you what we've been building.
+
+    Best regards,
+    The NextHack Team
+
+    ---
+    You're receiving this email because you subscribed to NextHack launch notifications.
+    © 2026 NextHack. All rights reserved.
+    """
+    
+    return {
+        "html": html_content,
+        "text": text_content,
+        "subject": "NextHack - You're On Board!"
+    }
+
+
+def send_email_smtp(to_email: str, subject: str, html_content: str, text_content: str) -> bool:
+    """Send email using SMTP"""
+    try:
+        # Get fresh configuration (reloads .env file)
+        config = get_smtp_config()
+        smtp_user = config["SMTP_USER"]
+        smtp_password = config["SMTP_PASSWORD"]
+        smtp_host = config["SMTP_HOST"]
+        smtp_port = config["SMTP_PORT"]
+        smtp_from_email = config["SMTP_FROM_EMAIL"]
+        smtp_from_name = config["SMTP_FROM_NAME"]
+        
+        logger.info(f"Using SMTP account: {smtp_user}")
+        print(f"[EMAIL SERVICE] Using SMTP account: {smtp_user}")
+        
+        if not smtp_user or not smtp_password:
+            logger.warning("SMTP credentials not configured. Email not sent.")
+            print(f"[EMAIL SERVICE] ✗ SMTP credentials not configured")
+            return False
+        
+        # Gmail requires that the From email matches the authenticated user
+        # Use SMTP_USER as From email if SMTP_FROM_EMAIL is different
+        from_email = smtp_from_email if smtp_from_email == smtp_user else smtp_user
+        
+        # Warn if emails don't match
+        if smtp_from_email != smtp_user:
+            logger.warning(f"SMTP_FROM_EMAIL ({smtp_from_email}) differs from SMTP_USER ({smtp_user}). Using SMTP_USER as From address.")
+        
+        # Create message
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From'] = f"{smtp_from_name} <{from_email}>"
+        msg['To'] = to_email
+        
+        # Add both plain text and HTML versions
+        part1 = MIMEText(text_content, 'plain')
+        part2 = MIMEText(html_content, 'html')
+        
+        msg.attach(part1)
+        msg.attach(part2)
+        
+        # Send email immediately and automatically
+        logger.info(f"Connecting to SMTP server {smtp_host}:{smtp_port}...")
+        logger.info(f"From: {from_email}, To: {to_email}")
+        print(f"[EMAIL SERVICE] Connecting to {smtp_host}:{smtp_port}...")
+        print(f"[EMAIL SERVICE] From: {from_email}, To: {to_email}")
+        
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=30) as server:
+            logger.info("Starting TLS...")
+            print(f"[EMAIL SERVICE] Starting TLS...")
+            server.starttls()
+            logger.info(f"Logging in as {smtp_user}...")
+            print(f"[EMAIL SERVICE] Logging in as {smtp_user}...")
+            server.login(smtp_user, smtp_password)
+            logger.info(f"Login successful! Sending email to {to_email}...")
+            print(f"[EMAIL SERVICE] Login successful! Sending email...")
+            
+            # Send the message
+            send_result = server.send_message(msg)
+            
+            # Check if there were any rejected recipients
+            if send_result:
+                logger.warning(f"Some recipients were rejected: {send_result}")
+                print(f"[EMAIL SERVICE] ⚠ Some recipients were rejected: {send_result}")
+            else:
+                logger.info(f"Email accepted by server for {to_email}")
+                print(f"[EMAIL SERVICE] ✓ Email accepted by server")
+        
+        logger.info(f"✓ Welcome email sent successfully to {to_email}")
+        print(f"[EMAIL SERVICE] ✓ Welcome email sent successfully to {to_email}")
+        return True
+        
+    except smtplib.SMTPAuthenticationError as e:
+        error_msg = f"SMTP Authentication failed: {e}"
+        logger.error(f"✗ {error_msg}")
+        logger.error("Please check your SMTP_USER and SMTP_PASSWORD in .env file")
+        logger.error("Make sure you're using an App Password (not regular password) for Gmail")
+        print(f"[EMAIL SERVICE] ✗ {error_msg}")
+        print(f"[EMAIL SERVICE] Check SMTP credentials in .env file")
+        return False
+    except smtplib.SMTPException as e:
+        error_msg = f"SMTP error: {e}"
+        logger.error(f"✗ {error_msg}")
+        print(f"[EMAIL SERVICE] ✗ {error_msg}")
+        return False
+    except Exception as e:
+        error_msg = f"Failed to send email via SMTP: {e}"
+        logger.error(f"✗ {error_msg}", exc_info=True)
+        print(f"[EMAIL SERVICE] ✗ {error_msg}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def send_email_sendgrid(to_email: str, subject: str, html_content: str, text_content: str) -> bool:
+    """Send email using SendGrid API"""
+    try:
+        if not SENDGRID_API_KEY:
+            logger.warning("SendGrid API key not configured. Email not sent.")
+            return False
+        
+        import sendgrid
+        from sendgrid.helpers.mail import Mail, Email, To, Content
+        
+        sg = sendgrid.SendGridAPIClient(api_key=SENDGRID_API_KEY)
+        
+        message = Mail(
+            from_email=Email(SMTP_FROM_EMAIL, SMTP_FROM_NAME),
+            to_emails=To(to_email),
+            subject=subject,
+            plain_text_content=text_content,
+            html_content=html_content
+        )
+        
+        response = sg.send(message)
+        
+        if response.status_code in [200, 201, 202]:
+            logger.info(f"Welcome email sent successfully to {to_email} via SendGrid")
+            return True
+        else:
+            logger.error(f"SendGrid API error: {response.status_code}")
+            return False
+            
+    except ImportError:
+        logger.error("SendGrid library not installed. Install with: pip install sendgrid")
+        return False
+    except Exception as e:
+        logger.error(f"Failed to send email via SendGrid: {e}")
+        return False
+
+
+def send_email_mailgun(to_email: str, subject: str, html_content: str, text_content: str) -> bool:
+    """Send email using Mailgun API"""
+    try:
+        if not MAILGUN_API_KEY or not MAILGUN_DOMAIN:
+            logger.warning("Mailgun credentials not configured. Email not sent.")
+            return False
+        
+        import requests
+        
+        response = requests.post(
+            f"https://api.mailgun.net/v3/{MAILGUN_DOMAIN}/messages",
+            auth=("api", MAILGUN_API_KEY),
+            data={
+                "from": f"{SMTP_FROM_NAME} <mailgun@{MAILGUN_DOMAIN}>",
+                "to": to_email,
+                "subject": subject,
+                "text": text_content,
+                "html": html_content
+            }
+        )
+        
+        if response.status_code == 200:
+            logger.info(f"Welcome email sent successfully to {to_email} via Mailgun")
+            return True
+        else:
+            logger.error(f"Mailgun API error: {response.status_code} - {response.text}")
+            return False
+            
+    except ImportError:
+        logger.error("Requests library not installed. Install with: pip install requests")
+        return False
+    except Exception as e:
+        logger.error(f"Failed to send email via Mailgun: {e}")
+        return False
+
+
+def send_welcome_email(to_email: str) -> bool:
+    """
+    Send welcome email to a new subscriber
+    Returns True if email was sent successfully, False otherwise
+    """
+    try:
+        email_content = get_welcome_email_template(to_email)
+        
+        if EMAIL_PROVIDER == "sendgrid":
+            return send_email_sendgrid(
+                to_email,
+                email_content["subject"],
+                email_content["html"],
+                email_content["text"]
+            )
+        elif EMAIL_PROVIDER == "mailgun":
+            return send_email_mailgun(
+                to_email,
+                email_content["subject"],
+                email_content["html"],
+                email_content["text"]
+            )
+        else:  # Default to SMTP
+            return send_email_smtp(
+                to_email,
+                email_content["subject"],
+                email_content["html"],
+                email_content["text"]
+            )
+            
+    except Exception as e:
+        logger.error(f"Error sending welcome email to {to_email}: {e}")
+        return False
+
