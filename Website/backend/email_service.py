@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 # =====================================================
 
 SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY", "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")
-SENDGRID_FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL", "contactnexthack@gmail.com")
+SENDGRID_FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL", "<contactnexthack@gmail.com>")
 SENDGRID_FROM_NAME = os.getenv("SENDGRID_FROM_NAME", "NextHack Team")
 
 
