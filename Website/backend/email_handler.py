@@ -127,6 +127,43 @@ def get_count() -> int:
     return count
 
 
+def get_all_subscribers(limit: int = 100, offset: int = 0) -> List[Dict]:
+    """
+    Return a list of subscribers with basic fields.
+    """
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT
+            id,
+            email,
+            subscribed_at,
+            welcome_email_sent,
+            welcome_email_sent_at
+        FROM subscribers
+        ORDER BY subscribed_at DESC
+        LIMIT ? OFFSET ?
+        """,
+        (limit, offset),
+    )
+    rows = cur.fetchall()
+    conn.close()
+
+    subscribers: List[Dict] = []
+    for row in rows:
+        subscribers.append(
+            {
+                "id": row["id"],
+                "email": row["email"],
+                "subscribed_at": row["subscribed_at"],
+                "welcome_email_sent": bool(row["welcome_email_sent"]),
+                "welcome_email_sent_at": row["welcome_email_sent_at"],
+            }
+        )
+    return subscribers
+
+
 # ======================================================
 # Pydantic Models
 # ======================================================
@@ -220,6 +257,21 @@ async def subscribe(request: SubscribeRequest):
 @app.get("/api/subscribers/count")
 async def subscriber_count():
     return {"count": get_count()}
+
+
+@app.get("/api/subscribers")
+async def list_subscribers(limit: int = 100, offset: int = 0):
+    """
+    Return the full subscriber list (paged) plus total count.
+    """
+    subscribers = get_all_subscribers(limit=limit, offset=offset)
+    total = get_count()
+    return {
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "subscribers": subscribers,
+    }
 
 
 # ======================================================
