@@ -165,7 +165,7 @@ def send_welcome_email(to_email: str) -> bool:
         sg = SendGridAPIClient(SENDGRID_API_KEY)
 
         message = Mail(
-            from_email=f"{SENDGRID_FROM_NAME}",
+            from_email=SENDGRID_FROM_NAME,
             to_emails=to_email,
             subject=email_content["subject"],
             plain_text_content=email_content["text"],
