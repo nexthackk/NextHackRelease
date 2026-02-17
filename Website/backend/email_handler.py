@@ -190,7 +190,7 @@ async def subscribe(request: SubscribeRequest):
 
             return SubscribeResponse(
                 success=True,
-                message="🎉 Success! Check your inbox for your welcome email.",
+                message="🎉 Success! Check your inbox or spam for your welcome email.",
                 email=email
             )
         else:
