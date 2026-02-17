@@ -59,6 +59,7 @@ SMTP_FROM_NAME = get_smtp_config()["SMTP_FROM_NAME"]
 
 # SendGrid Configuration
 SENDGRID_API_KEY = os.getenv("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", "")
+FROM_EMAIL = os.getenv("contactnexthack@gmail.com")
 
 # Mailgun Configuration
 MAILGUN_API_KEY = os.getenv("MAILGUN_API_KEY", "")
