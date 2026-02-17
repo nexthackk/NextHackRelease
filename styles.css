@@ -82,6 +82,67 @@ body {
     animation-delay: 0s;
 }
 
+/* Trust strip */
+.trust-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem 1rem;
+    margin-top: 2rem;
+    margin-bottom: 3rem;
+    padding: 0.9rem 1.2rem;
+    border-radius: 999px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+}
+
+.trust-item {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    letter-spacing: 0.03em;
+}
+
+.trust-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--text-muted);
+    opacity: 0.8;
+}
+
+/* Testimonial */
+.testimonial-section {
+    width: 100%;
+    margin-top: 3rem;
+}
+
+.testimonial-card {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 2rem 2.25rem;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-lg);
+}
+
+.testimonial-quote {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: var(--text-primary);
+    font-style: italic;
+    margin-bottom: 1rem;
+}
+
+.testimonial-meta {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
 .orb-2 {
     width: 400px;
     height: 400px;
