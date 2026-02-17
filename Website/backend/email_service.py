@@ -59,7 +59,7 @@ SMTP_FROM_NAME = get_smtp_config()["SMTP_FROM_NAME"]
 
 # SendGrid Configuration
 # SendGrid Configuration
-SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY", "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")
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
 SENDGRID_FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL", "contactnexthack@gmail.com")
 SENDGRID_FROM_NAME = os.getenv("SENDGRID_FROM_NAME", "NextHack Team")
 
@@ -275,38 +275,37 @@ def send_email_mailgun(to_email: str, subject: str, html_content: str, text_cont
 
 
 def send_welcome_email(to_email: str) -> bool:
-    """
-    Send welcome email to a new subscriber
-    Returns True if email was sent successfully, False otherwise
-    """
     try:
         email_content = get_welcome_email_template(to_email)
-        
+
         provider = get_smtp_config()["EMAIL_PROVIDER"]
-        
-        if EMAIL_PROVIDER == "sendgrid":
+        print(f"[EMAIL SERVICE] Using provider: {provider}")
+
+        if provider == "sendgrid":
             return send_email_sendgrid(
                 to_email,
                 email_content["subject"],
                 email_content["html"],
                 email_content["text"]
             )
-        elif EMAIL_PROVIDER == "mailgun":
+
+        elif provider == "mailgun":
             return send_email_mailgun(
                 to_email,
                 email_content["subject"],
                 email_content["html"],
                 email_content["text"]
             )
-        else:  # Default to SMTP
+
+        else:
+            print("[EMAIL SERVICE] SMTP selected (not recommended on Railway)")
             return send_email_smtp(
                 to_email,
                 email_content["subject"],
                 email_content["html"],
                 email_content["text"]
             )
-            
+
     except Exception as e:
         logger.error(f"Error sending welcome email to {to_email}: {e}")
         return False
-
