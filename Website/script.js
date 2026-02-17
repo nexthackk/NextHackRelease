@@ -2,7 +2,7 @@
 // Email Collection & Form Handling
 // ============================================
 
-const API_BASE_URL = 'http://localhost:8000/api'; // Backend API URL
+const API_BASE_URL = 'https://nexthackrelease-production.up.railway.app/api'; // Backend API URL
 
 // DOM Elements
 const emailForm = document.getElementById('emailForm');
