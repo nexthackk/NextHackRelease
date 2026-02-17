@@ -291,36 +291,44 @@ def send_email_sendgrid(to_email: str, subject: str, html_content: str, text_con
     """Send email using SendGrid API"""
     try:
         if not SENDGRID_API_KEY:
-            logger.warning("SendGrid API key not configured. Email not sent.")
+            logger.error("SENDGRID_API_KEY not configured.")
+            print("[EMAIL SERVICE] ✗ SENDGRID_API_KEY not configured")
             return False
-        
+
+        if not SENDGRID_FROM_EMAIL:
+            logger.error("SENDGRID_FROM_EMAIL not configured.")
+            print("[EMAIL SERVICE] ✗ SENDGRID_FROM_EMAIL not configured")
+            return False
+
         import sendgrid
-        from sendgrid.helpers.mail import Mail, Email, To, Content
-        
+        from sendgrid.helpers.mail import Mail
+
         sg = sendgrid.SendGridAPIClient(api_key=SENDGRID_API_KEY)
-        
+
         message = Mail(
-            from_email=Email(SMTP_FROM_EMAIL, SMTP_FROM_NAME),
-            to_emails=To(to_email),
+            from_email=f"{SENDGRID_FROM_NAME} <{SENDGRID_FROM_EMAIL}>",
+            to_emails=to_email,
             subject=subject,
             plain_text_content=text_content,
             html_content=html_content
         )
-        
+
         response = sg.send(message)
-        
+
+        print(f"[EMAIL SERVICE] SendGrid status: {response.status_code}")
+
         if response.status_code in [200, 201, 202]:
-            logger.info(f"Welcome email sent successfully to {to_email} via SendGrid")
+            logger.info(f"✓ Welcome email sent to {to_email} via SendGrid")
+            print(f"[EMAIL SERVICE] ✓ Email sent successfully")
             return True
         else:
-            logger.error(f"SendGrid API error: {response.status_code}")
+            logger.error(f"SendGrid failed: {response.status_code} - {response.body}")
+            print(f"[EMAIL SERVICE] ✗ SendGrid failed")
             return False
-            
-    except ImportError:
-        logger.error("SendGrid library not installed. Install with: pip install sendgrid")
-        return False
+
     except Exception as e:
-        logger.error(f"Failed to send email via SendGrid: {e}")
+        logger.error(f"SendGrid Exception: {e}", exc_info=True)
+        print(f"[EMAIL SERVICE] ✗ SendGrid exception: {e}")
         return False
 
 
@@ -367,6 +375,8 @@ def send_welcome_email(to_email: str) -> bool:
     """
     try:
         email_content = get_welcome_email_template(to_email)
+        
+        provider = get_smtp_config()["EMAIL_PROVIDER"]
         
         if EMAIL_PROVIDER == "sendgrid":
             return send_email_sendgrid(
