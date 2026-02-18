@@ -630,18 +630,6 @@ body {
     transform: translateY(-2px);
 }
 
-.social-link {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    transition: 0.3s ease;
-}
-
-.social-link:hover {
-    opacity: 0.8;
-}
-
 
 .footer-bottom {
     text-align: center;
