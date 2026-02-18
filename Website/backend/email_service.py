@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 # Environment Variables (set in Railway — NEVER hardcode)
 # =====================================================
 
-SENDGRID_API_KEY    = os.getenv("SENDGRID_API_KEY", "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")       # No fallback — forces env var
+SENDGRID_API_KEY    = os.getenv("SENDGRID_API_KEY", "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")       # No fallback — forces env var
 SENDGRID_FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL", "contactnexthack@gmail.com")
 SENDGRID_FROM_NAME  = os.getenv("SENDGRID_FROM_NAME", "NextHack Team")
 
