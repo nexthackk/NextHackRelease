@@ -7,6 +7,7 @@ import os
 import sqlite3
 import logging
 from datetime import datetime
+import uvicorn
 from pathlib import Path
 from typing import List, Dict, Optional
 
